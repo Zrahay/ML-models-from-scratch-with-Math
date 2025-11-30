@@ -136,11 +136,20 @@ class DecisionTreeClassifier():
             new_right_split_labels = []
 
             # We will need to calculate the GI before the split as well
+            labels = []
+            for i in left_split:
+                val = map[i]
+                labels.append(val)
+            
+            labels1 = []
+            for i in right_split:
+                val = map[i]
+                labels1.append(val)
+
+            gi_org = __gini(labels, labels1)
+
 
             for val in left_split:
-                
-            for val in left_split:
-
                 if val <= threshold:
                     new_left_split_values.append(val)
                     new_left_split_labels.append(map[val])
@@ -148,9 +157,10 @@ class DecisionTreeClassifier():
                     new_right_split_values.append(val)
                     new_right_split_labels.append(map[val])
             
-            # NOw that we have the left adn right split according to the median which acts as the threshold here, we can calculate the GI and IG for this
+            # Now that we have the left and right split according to the median which acts as the threshold here, we can calculate the GI and IG for this
+            gi_after = __gini(new_left_split_labels, new_right_split_labels)
+            ig = __information_gain(gi_org, left_split, gi_after, right_split)
 
-            # Before sednding 
 
     
 
