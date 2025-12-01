@@ -48,7 +48,11 @@ class DecisionTreeClassifier():
 
         ig_right = 1 - ((one_right / len(right_split))**2 + (zero_right / len(right_split))**2)
 
-        return ig_left, ig_right
+        total_len = len(left_split) + len(right_split)
+
+        weighted_gini = (len(left_split)/total_len) * ig_left + (len(right_split)/total_len) * ig_right
+
+        return weighted_gini
     
 
 
@@ -64,7 +68,7 @@ class DecisionTreeClassifier():
         return ig
     
 
-    def __best_split(left_split = None, right_split = None, map = None):
+    def __best_split(self, left_split = None, right_split = None, map = None):
         """
         This function decides the best split based on the Gini Impurity and the best Information Gain. 
         """
@@ -83,85 +87,101 @@ class DecisionTreeClassifier():
         for val in right_split:
             label = map[val]
             label_right.append(label)
-        
-        ig_left_org, ig_right_org = __gini(left_split, right_split)
 
-        # After this step, we need to sort left and right find the medians of each left and right split and pair each value with their labels
+        # Now we need to find the medians of the adjacent values and so, for that we need to sort both the lists
 
-        map_left = []
-
-        for val in left_split:
-            i = map[val]
-            map_left.append((val, i))
-        
-        map_right = []
-
-        for val in right_split:
-            i = map[val]
-            map_right.append((val, i))
-        
-        # Now we can just sort the values according to their values, not labels
-
-        map_left.sort()
-        map_right.sort()
-
-        # Now that we have sorted our values in the left and right map, we can safely start calculating median for adjacent pair
+        left_split.sort()
+        right_split.sort()
 
         median_left = []
-        median_right = []
 
         i = 0
         j = i + 1
 
         while j < len(left_split):
-            median = (left_split[i] + left_split[j]) / (2.0)
-
-            median_left.append(median)
-
+            median_val = (left_split[i] + left_split[j]) / (2.0)
+            median_left.append(median_val)
+            i += 1
+            j += 1
+        
+        median_right = []
         i = 0
         j = i + 1
         while j < len(right_split):
-            median = (right_split[i] + left_split[j]) / (2.0)
+            median_val = (right_split[i] + right_split[j]) / (2.0)
+            median_right.append(median_val)
+            i += 1
+            j += 1
 
-            median_right.append(median)
-        
-        # NOw that we have the right and left medians, we can take the left and right medians
+        # After getting medians for both left and right, we can take each median and calculate the weighted gini impurity because of that. 
 
-        # We can first take the left medians and calculate the gi and ig for each
-
+        # SO, we can start with the median_left list
+        information_gain_left = []
         for threshold in median_left:
-            new_left_split_values= []
-            new_right_split_values = []
-            new_left_split_labels = []
-            new_right_split_labels = []
+            # For each threshold, we need to calculate the original Gini Impurity for the list that we have right now
 
-            # We will need to calculate the GI before the split as well
-            labels = []
+            weighted_original = self.__gini(label_left, label_right)
+            new_left_left_split = []
+            new_left_right_split = []
             for i in left_split:
-                val = map[i]
-                labels.append(val)
-            
-            labels1 = []
-            for i in right_split:
-                val = map[i]
-                labels1.append(val)
-
-            gi_org = __gini(labels, labels1)
-
-
-            for val in left_split:
-                if val <= threshold:
-                    new_left_split_values.append(val)
-                    new_left_split_labels.append(map[val])
+                if i <= threshold:
+                    new_left_left_split.append(i)
                 else:
-                    new_right_split_values.append(val)
-                    new_right_split_labels.append(map[val])
+                    new_left_right_split.append(i)
             
-            # Now that we have the left and right split according to the median which acts as the threshold here, we can calculate the GI and IG for this
-            gi_after = __gini(new_left_split_labels, new_right_split_labels)
-            ig = __information_gain(gi_org, left_split, gi_after, right_split)
+            # Now we need the weighted gini impurity to be calculated for this left split and right split based on the threshold
+            # For these weighted ginis, we need the labels corresponding to the left and right split
+            left_labels = []
+            right_labels = []
+
+            for val in new_left_left_split:
+                left_labels.append(map[val])
+
+            for val in new_left_right_split:
+                right_labels.append(map[val])
+            
+            weighted_new = self.__gini(left_labels, right_labels)
+            ig = self.__information_gain(weighted_original, weighted_new)
+            information_gain_left.append((ig, threshold))
+        
+
+        information_gain_right = []
+        for threshold in median_right:
+            weighted_original = self.__gini(label_left, label_right)
+            new_right_left_split = []
+            new_right_right_split = []
+            for i in right_split:
+                if i <= threshold:
+                    new_right_left_split.append(i)
+                else:
+                    new_right_right_split.append(i)
+            
+            left_labels = []
+            right_labels = []
+
+            for val in new_right_left_split:
+                left_labels.append(map[val])
+            
+            for val in new_right_right_split:
+                right_labels.append(map[val])
+            
+
+            weighted_new = self.__gini(left_labels, right_labels)
+            ig = self.__information_gain(weighted_original, weighted_new)
+            information_gain_right.append((ig, threshold))
+        
+
+            
+
+            
 
 
+
+
+
+
+
+        
     
 
 
